@@ -91,6 +91,7 @@ function Dashboard() {
     return gradients[Math.floor(Math.random() * gradients.length)]
   }
 
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -151,6 +152,7 @@ function Dashboard() {
                           <Ellipsis className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
+                      
                       <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuItem 
                           className="text-red-600 focus:text-red-600 focus:bg-red-50"
@@ -159,7 +161,7 @@ function Dashboard() {
                             setResumeToDelete(resume._id)
                             setDeleteDialogOpen(true)
                           }}
-                        >
+                          >
                           <Trash2 className="mr-2 h-4 w-4" />
                           Delete
                         </DropdownMenuItem>

@@ -1,18 +1,7 @@
+import { Link } from 'react-router-dom'
 import { Button } from './ui/button'
-import resumeService from '../backend/resume';
-import { useNavigate } from 'react-router-dom';
-
-
 
 function LandingPage() {
-
-  const navigate = useNavigate();
-
-    const handleCreateResume = async () => {
-     const response  = await resumeService.createResume('Untitled Resume');
-    navigate(`/resume/${response._id}`);
-  };
-
   return (
     <main className="min-h-screen flex flex-col md:flex-row items-center justify-center gap-8 px-4 py-12 max-w-6xl mx-auto">
 
@@ -34,8 +23,8 @@ function LandingPage() {
           </p>
           
           <div className="flex gap-4 justify-center md:justify-start">
-            <Button className=" px-6 py-6 text-lg" onClick={handleCreateResume}>
-              Create Resume
+            <Button asChild className=" px-6 py-6 text-lg" >
+              <Link to="/templates">Create Resume</Link>
             </Button>
           </div>
         </div>

@@ -17,6 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
+import { toast,Toaster } from 'sonner';
 
 // Sortable item component
 function SortableItem({ id, children, ...props }) {
@@ -113,7 +114,48 @@ function ProjectsForm({ data, updateData }) {
     
     setIsGeneratingPoints(true);
     try {
-      const prompt = `Based on this project description: "${projectDescription}", generate exactly 4 lines, impactful bullet points that would perform well in ATS (Applicant Tracking Systems). Focus on specific achievements, technologies used, and quantifiable results . Format the response as separated using ; symbol list without numbering . The ponits should be quantified and impactful.`;
+      const prompt = `Based on this project description: "${projectDescription}", generate 4 to 6 lines, impactful points that would perform well in ATS (Applicant Tracking Systems). Focus on specific achievements, technologies used, and quantifiable results . Format the response as separated using ; symbol list without numbering . The ponits should be quantified and impactful.`;
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }]
+        })
+      });
+      console.log('Response from Gemini API:', response);
+      
+      const result = await response.json();
+      // console.log('Generated Points:', result);
+      
+      const generatedText = result.candidates[0].content.parts[0].text;
+      // console.log('Generated Points Text:', generatedText);
+      
+      const points = generatedText.split(';').map(point => point.trim()).filter(point => point);
+      // console.log('Filtered Points:', points);
+      
+      setProject(prev => ({
+        ...prev,
+        points: points.length > 0 ? points : prev.points
+      }));
+    } catch (error) {
+      console.error('Error generating points:', error);
+      toast.error('Failed to generate points. Please try again.');
+    } finally {
+      setIsGeneratingPoints(false);
+    }
+  };
+
+  const generateTechnologies = async()=>{
+    if(!projectDescription.trim()) return;
+    try {
+       const prompt = `Based on this project description: "${projectDescription}", generate all the technologies mention here that would perform well in ATS (Applicant Tracking Systems). Format the response as separated using ; symbol list without numbering .`;
       
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`, {
         method: 'POST',
@@ -130,20 +172,24 @@ function ProjectsForm({ data, updateData }) {
       });
       
       const result = await response.json();
+      // console.log('Generated Technologies:', result);
+      
       const generatedText = result.candidates[0].content.parts[0].text;
-      const points = generatedText.split(';').map(point => point.trim()).filter(point => point);
+      // console.log('Generated Technologies Text:', generatedText);
+      
+      const technologies = generatedText.split(';').map(technology => technology.trim()).filter(technology => technology);
+      // console.log('Parsed Technologies:', technologies);
       
       setProject(prev => ({
         ...prev,
-        points: points.length > 0 ? points : prev.points
+        technologies: technologies.length > 0 ? technologies : prev.technologies
       }));
     } catch (error) {
-      console.error('Error generating points:', error);
-      alert('Failed to generate points. Please try again.');
-    } finally {
-      setIsGeneratingPoints(false);
+      console.error('Error generating technologies:', error);
+      toast.error('Failed to generate technologies. Please try again.');
+      
     }
-  };
+  }
 
   const handleAddProject = () => {
     if (project.title) {
@@ -198,7 +244,7 @@ function ProjectsForm({ data, updateData }) {
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Projects</h2>
-      
+      <Toaster richColors expand={true} />
       {/* Existing projects with drag-and-drop */}
       {data.length > 0 && (
         <DndContext
@@ -295,7 +341,10 @@ function ProjectsForm({ data, updateData }) {
             placeholder="Describe your project in detail to generate key points..."
           />
           <button
-            onClick={generateKeyPoints}
+            onClick={() => {
+              generateKeyPoints();
+              generateTechnologies();
+            }}
             disabled={!projectDescription.trim() || isGeneratingPoints}
             className={`mt-2 px-4 py-2 rounded ${!projectDescription.trim() || isGeneratingPoints ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
           >
