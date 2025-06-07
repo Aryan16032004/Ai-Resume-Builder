@@ -1,5 +1,38 @@
-// components/Resume/EducationForm.jsx
 import React, { useState } from 'react';
+import {
+  DndContext,
+  closestCenter,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  KeyboardSensor,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical } from 'lucide-react';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+
+function SortableItem({ id, children }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : 'auto',
+    background: isDragging ? '#f3f4f6' : undefined,
+    cursor: 'grab',
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
+    </div>
+  );
+}
 
 function EducationForm({ data, updateData }) {
   const [education, setEducation] = useState({
@@ -10,12 +43,18 @@ function EducationForm({ data, updateData }) {
     endYear: '',
     marks: '',
     state: '',
-    country:'',
+    country: '',
   });
+
+  // dnd-kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEducation(prev => ({ ...prev, [name]: value }));
+    setEducation((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleAddEducation = () => {
@@ -38,36 +77,64 @@ function EducationForm({ data, updateData }) {
     updateData(data.filter((_, i) => i !== index));
   };
 
+  // Drag and drop event handler
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const oldIndex = data.findIndex((_, idx) => idx.toString() === active.id);
+      const newIndex = data.findIndex((_, idx) => idx.toString() === over.id);
+      updateData(arrayMove(data, oldIndex, newIndex));
+    }
+  };
+
   return (
     <div>
       <h2 className="text-xl font-bold mb-4">Education</h2>
-      
-      {/* Existing education entries */}
+
+      {/* Existing education entries with drag and drop */}
       {data.length > 0 && (
-        <div className="mb-6 space-y-4">
-          {data.map((edu, index) => (
-            <div key={index} className="border border-gray-200 rounded p-4">
-              <div className="flex justify-between">
-                <div>
-                  <h3 className="font-medium">{edu.institution}</h3>
-                  <p className="text-sm text-gray-600">{edu.degree} {edu.fieldOfStudy && `in ${edu.fieldOfStudy}`}</p>
-                </div>
-                <button
-                  onClick={() => handleRemoveEducation(index)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  Remove
-                </button>
-              </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToVerticalAxis]}
+        >
+          <SortableContext
+            items={data.map((_, i) => i.toString())}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="mb-6 space-y-4">
+              {data.map((edu, index) => (
+                <SortableItem key={index} id={index.toString()}>
+                  <div className="border border-gray-200 rounded p-4 flex justify-between items-center bg-white shadow-sm">
+                    <div className='flex items-center gap-2'>
+                      <button className='text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing'><GripVertical size={16} /></button>
+                      <div>
+                        <h3 className="font-medium">{edu.institution}</h3>
+                        <p className="text-sm text-gray-600">
+                          {edu.degree} {edu.fieldOfStudy && `in ${edu.fieldOfStudy}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleRemoveEducation(index)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </SortableItem>
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
-      
+
       {/* Add new education form */}
       <div className="space-y-4 border border-gray-200 rounded p-4">
         <h3 className="font-medium">{data.length > 0 ? 'Add Another Education' : 'Add Your Education'}</h3>
-        
         <div>
           <label className="block text-sm font-medium text-gray-700">Institution*</label>
           <input
@@ -79,7 +146,6 @@ function EducationForm({ data, updateData }) {
             required
           />
         </div>
-        
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Degree</label>
@@ -104,7 +170,6 @@ function EducationForm({ data, updateData }) {
             />
           </div>
         </div>
-        
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">Start Year</label>
@@ -131,7 +196,6 @@ function EducationForm({ data, updateData }) {
             />
           </div>
         </div>
-        
         <div>
           <label className="block text-sm font-medium text-gray-700">Marks/GPA</label>
           <input
@@ -143,7 +207,6 @@ function EducationForm({ data, updateData }) {
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
-        
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">State</label>
@@ -155,7 +218,7 @@ function EducationForm({ data, updateData }) {
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
-           <div>
+          <div>
             <label className="block text-sm font-medium text-gray-700">Country</label>
             <input
               type="text"
@@ -166,7 +229,6 @@ function EducationForm({ data, updateData }) {
             />
           </div>
         </div>
-        
         <button
           onClick={handleAddEducation}
           disabled={!education.institution}

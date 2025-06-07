@@ -2,50 +2,36 @@ import React, { useState } from 'react';
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
-  PointerSensor,
   useSensor,
   useSensors,
-  DragOverlay
+  PointerSensor,
+  KeyboardSensor,
 } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
+  useSortable,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-  useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import geminiService from '../../backend/gemini';
 
 // SortableItem component (reusable)
-function SortableItem({ id, children, ...props }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id });
-
+function SortableItem({ id, children }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1
+    zIndex: isDragging ? 50 : 'auto',
+    background: isDragging ? '#f3f4f6' : undefined,
+    cursor: 'grab',
   };
-
   return (
-    <div ref={setNodeRef} style={style} {...props}>
-      <div className="flex items-center gap-2">
-        <button
-          {...attributes}
-          {...listeners}
-          className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
-        >
-          <GripVertical size={16} />
-        </button>
-        {children}
-      </div>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
     </div>
   );
 }
@@ -64,15 +50,10 @@ function TrainingForm({ data, updateData }) {
   const [isGeneratingPoints, setIsGeneratingPoints] = useState(false);
 
   // DnD setup
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor)
+   const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
-  const [activeId, setActiveId] = useState(null);
-
-  const handleDragStart = (event) => {
-    setActiveId(event.active.id);
-  };
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
@@ -82,13 +63,10 @@ function TrainingForm({ data, updateData }) {
       const newIndex = data.findIndex(item => item.name === over.id);
       updateData(arrayMove(data, oldIndex, newIndex));
     }
-    
-    setActiveId(null);
+
   };
 
-  const handleDragCancel = () => {
-    setActiveId(null);
-  };
+ 
 
   // Rest of your existing handlers...
   const handleTrainingChange = (e) => {
@@ -119,26 +97,11 @@ function TrainingForm({ data, updateData }) {
     
     setIsGeneratingPoints(true);
     try {
-      const prompt = `Based on this training description: "${training.description}", generate 3-5 bullet points for a resume. 
+      const prompt = `Based on this training description: "${training.description}", generate 3-5 points for a resume. 
       The last point should list technologies/skills learned (format: "Technologies: Java, SQL, etc."). 
-      Make it ATS-friendly, quantified, and impactful. Separate points with ;`;
+      Make it ATS-friendly, quantified, and impactful.  Format the response as separated using ; symbol list without numbering `;
       
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: prompt
-            }]
-          }]
-        })
-      });
-      
-      const result = await response.json();
-      const generatedText = result.candidates[0].content.parts[0].text;
+      const generatedText = await geminiService.getGeminiResponse(prompt);
       const points = generatedText.split(';').map(point => point.trim()).filter(point => point);
       
       setTraining(prev => ({
@@ -174,16 +137,15 @@ function TrainingForm({ data, updateData }) {
 
   return (
     <div>
-      <h2 className="text-xl font-bold mb-4">Training & Certifications</h2>
+      <h2 className="text-xl font-bold mb-4">Training</h2>
       
       {/* Existing trainings with DnD */}
       {data.length > 0 && (
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
+          modifiers={[restrictToVerticalAxis]}
         >
           <SortableContext 
             items={data.map(item => item.name)} 
@@ -192,39 +154,32 @@ function TrainingForm({ data, updateData }) {
             <div className="mb-6 space-y-4">
               {data.map((train, index) => (
                 <SortableItem key={train.name} id={train.name} className="border border-gray-200 rounded p-4">
-                  <div className="flex justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-medium">{train.name} - {train.organization}</h3>
-                      <ul className="mt-2 list-disc list-inside text-sm">
-                        {train.points.map((point, i) => (
-                          <li key={i}>{point}</li>
-                        ))}
-                      </ul>
-                      <div className="mt-2 text-xs text-gray-500">
-                        {train.startDate} to {train.currentlyOngoing ? 'Present' : train.endDate}
+                  <div className='flex items-center gap-4 bg-white shadow-sm border border-gray-200 rounded p-4'>
+                    <button className='text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing'><GripVertical size={16} /></button>
+                    <div className="flex justify-between">
+                      <div className="flex-1">
+                        <h3 className="font-medium">{train.name} - {train.organization}</h3>
+                        <ul className="mt-2 list-disc list-inside text-sm">
+                          {train.points.map((point, i) => (
+                            <li key={i}>{point}</li>
+                          ))}
+                        </ul>
+                        <div className="mt-2 text-xs text-gray-500">
+                          {/* {train.startDate} to {train.currentlyOngoing ? 'Present' : train.endDate} */}
+                        </div>
                       </div>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveTraining(index)}
-                      className="text-red-500 hover:text-red-700 ml-4"
-                    >
-                      Remove
-                    </button>
+                      <button
+                        onClick={() => handleRemoveTraining(index)}
+                        className="text-red-500 hover:text-red-700 ml-4"
+                      >
+                        Remove
+                      </button>
+                      </div>
                   </div>
                 </SortableItem>
               ))}
             </div>
           </SortableContext>
-
-          <DragOverlay>
-            {activeId ? (
-              <div className="border border-blue-200 bg-blue-50 rounded p-4 shadow-lg">
-                <h3 className="font-medium">
-                  {data.find(item => item.name === activeId)?.name}
-                </h3>
-              </div>
-            ) : null}
-          </DragOverlay>
         </DndContext>
       )}
       

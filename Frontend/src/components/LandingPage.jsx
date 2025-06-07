@@ -26,6 +26,9 @@ function LandingPage() {
             <Button asChild className=" px-6 py-6 text-lg" >
               <Link to="/templates">Create Resume</Link>
             </Button>
+             <Button asChild className=" px-6 py-6 text-lg" >
+              <Link to="/ats">Check ATS Score</Link>
+            </Button>
           </div>
         </div>
         

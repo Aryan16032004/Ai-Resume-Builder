@@ -4,23 +4,33 @@ const resumeSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true
+    required: true,
+    index: true
   },
-  name:String,
+  name: {
+    type: String,
+    index: true
+  },
   templateName: {
-  type: String,
-  required: true,
-} ,
-   profileImage: {
+    type: String,
+    required: true,
+    index: true
+  },
+  profileImage: {
     type: String,
   },
-
   personalInfo: {
-    fullName: { type: String},
+    fullName: { 
+      type: String,
+      index: true
+    },
     pincode: String,
-    state:String,
+    state: String,
     city: String,
-    email: { type: String},
+    email: { 
+      type: String,
+      index: true
+    },
     phone: String,
     linkedIn: String,
     linkedInLink: String,
@@ -38,7 +48,7 @@ const resumeSchema = new mongoose.Schema({
   projects: [{
     title: { type: String, required: true },
     summary: { type: String},
-    points: [String], // AI-generated
+    points: [String],
     startDate: Date,
     endDate: Date,
     currentlyWorking: { type: Boolean, default: false },
@@ -53,17 +63,9 @@ const resumeSchema = new mongoose.Schema({
     endYear: Number,
     marks: String,
     state: String,
-    country:String,
+    country: String,
   }],
-  // workExperience: [{
-  //   company: { type: String, required: true },
-  //   position: { type: String, required: true },
-  //   startDate: Date,
-  //   endDate: Date,
-  //   currentlyWorking: Boolean,
-  //   description: [String] // AI-generated points
-  // }],
-   trainings: [{
+  trainings: [{
     name: { type: String, required: true },         
     organization: { type: String, required: true },                              
     points: [String],                             
@@ -84,7 +86,49 @@ const resumeSchema = new mongoose.Schema({
   settings: {
     template: { type: String, default: "general" },
     lastUpdated: { type: Date, default: Date.now }
+  },
+  isPublic: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  viewCount: {
+    type: Number,
+    default: 0
   }
-}, { timestamps: true });
+}, { 
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Compound indexes for common queries
+resumeSchema.index({ user: 1, templateName: 1 });
+resumeSchema.index({ 'personalInfo.email': 1, isPublic: 1 });
+
+// Static method for finding public resumes
+resumeSchema.statics.findPublicResumes = function() {
+  return this.find({ isPublic: true })
+    .select('name templateName personalInfo settings')
+    .lean();
+};
+
+// Static method for finding user's resumes
+resumeSchema.statics.findUserResumes = function(userId) {
+  return this.find({ user: userId })
+    .select('name templateName settings lastUpdated')
+    .lean();
+};
+
+// Method to increment view count
+resumeSchema.methods.incrementViewCount = async function() {
+  this.viewCount += 1;
+  return this.save();
+};
+
+// Virtual for full name
+resumeSchema.virtual('fullName').get(function() {
+  return this.personalInfo?.fullName || '';
+});
 
 export const Resume = mongoose.model("Resume", resumeSchema);

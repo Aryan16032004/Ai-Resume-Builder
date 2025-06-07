@@ -170,7 +170,10 @@ function GeneralPreview({ data, id }) {
           <div className="text-[13px]">
             {data.certifications.map((cert, index) => (
               <div key={index} className='flex justify-between'>
-                <h3>• {cert.name} by {cert.issuer}</h3>
+                <div>
+                  <h3>• {cert.name} by {cert.issuer}</h3>
+                  {cert.link && <p className='ml-2'>Link — <a href={cert.link} target="_blank" rel="noopener noreferrer">{cert.link}</a></p>}
+                </div>
                 <p>
                   {cert.date && formatDate(cert.date)}
                 </p>

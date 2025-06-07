@@ -3,49 +3,34 @@ import React, { useState } from 'react';
 import {
   DndContext,
   closestCenter,
-  KeyboardSensor,
-  PointerSensor,
   useSensor,
   useSensors,
-  DragOverlay
+  PointerSensor,
+  KeyboardSensor,
 } from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
+  useSortable,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-  useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 
-function SortableItem({ id, children, ...props }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id });
-
+function SortableItem({ id, children }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1
+    zIndex: isDragging ? 50 : 'auto',
+    background: isDragging ? '#f3f4f6' : undefined,
+    cursor: 'grab',
   };
-
   return (
-    <div ref={setNodeRef} style={style} {...props}>
-      <div className="flex items-center gap-2">
-        <button
-          {...attributes}
-          {...listeners}
-          className="text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing"
-        >
-          <GripVertical size={16} />
-        </button>
-        {children}
-      </div>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
     </div>
   );
 }
@@ -79,18 +64,12 @@ function CertificationsForm({ data, updateData }) {
     updateData(data.filter((_, i) => i !== index));
   };
 
-    const sensors = useSensors(
-      useSensor(PointerSensor),
-      useSensor(KeyboardSensor)
-    );
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
   
-    const [activeId, setActiveId] = useState(null);
-  
-    const handleDragStart = (event) => {
-      setActiveId(event.active.id);
-    };
-  
-    const handleDragEnd = (event) => {
+  const handleDragEnd = (event) => {
       const { active, over } = event;
       
       if (active.id !== over.id) {
@@ -98,13 +77,9 @@ function CertificationsForm({ data, updateData }) {
         const newIndex = data.findIndex(cert => cert.name === over.id);
         updateData(arrayMove(data, oldIndex, newIndex));
       }
-      
-      setActiveId(null);
+
     };
-  
-    const handleDragCancel = () => {
-      setActiveId(null);
-    };
+
 
   return (
     <div>
@@ -114,9 +89,8 @@ function CertificationsForm({ data, updateData }) {
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
+          modifiers={[restrictToVerticalAxis]}
         >
           <SortableContext 
             items={data.map(cert => cert.name)} 
@@ -124,8 +98,10 @@ function CertificationsForm({ data, updateData }) {
           >
             <div className="mb-6 space-y-4">
               {data.map((cert, index) => (
-                <SortableItem key={cert.name} id={cert.name} className="border border-gray-200 rounded p-4">
-                  <div className="flex justify-between items-center w-full">
+                <SortableItem key={cert.name} id={cert.name}>
+                  <div className='flex items-center gap-2 bg-white shadow-sm border border-gray-200 rounded p-4'>
+                    <button className='text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing'><GripVertical size={16} /></button>
+                    <div className="flex justify-between items-center w-full">
                     <div className="flex flex-col">
                       <h3 className="font-medium">{cert.name}</h3>
                       <p className="text-sm text-gray-600">{cert.issuer}</p>
@@ -137,20 +113,11 @@ function CertificationsForm({ data, updateData }) {
                       Remove
                     </button>
                   </div>
+                  </div>
                 </SortableItem>
               ))}
             </div>
           </SortableContext>
-
-          <DragOverlay>
-            {activeId ? (
-              <div className="border border-blue-200 bg-blue-50 rounded p-4 shadow-lg">
-                <h3 className="font-medium">
-                  {data.find(cert => cert.name === activeId)?.name}
-                </h3>
-              </div>
-            ) : null}
-          </DragOverlay>
         </DndContext>
       )}
 

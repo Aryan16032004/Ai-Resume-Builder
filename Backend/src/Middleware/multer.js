@@ -1,20 +1,37 @@
-import multer from "multer"
+import multer from "multer";
+import path from "path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import fs from 'fs/promises';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Ensure upload directory exists
+const uploadDir = path.join(__dirname, '../public/uploads');
+try {
+    await fs.mkdir(uploadDir, { recursive: true });
+    console.log(`Upload directory created at: ${uploadDir}`);
+} catch (err) {
+    console.error('Error creating upload directory:', err);
+}
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, "public/uploadImage")
+        cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-        cb(null, file.originalname)
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
 
 const fileFilter = (req, file, cb) => {
-    // Accept images only
-    if (file.mimetype.startsWith('image/')) {
+    const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
     } else {
-        cb(new Error('Only image files are allowed!'), false);
+        cb(new Error('Only PDF and DOCX files are allowed!'), false);
     }
 };
 

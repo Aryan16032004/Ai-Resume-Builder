@@ -12,6 +12,7 @@ import LandingPage from './components/LandingPage.jsx'
 import Dashboard from './components/Dashboard/Dashboard.jsx'
 import Protected from './components/AuthLayout.jsx'
 import ResumeTemplates from './components/ResumeForm/Template/ResumeTemplates.jsx'
+import ATSChecker from './components/ATSChecker/ATSChecker.jsx'
 
 const router = createBrowserRouter([
   {
@@ -33,6 +34,10 @@ const router = createBrowserRouter([
     ,{
       path:'/templates',
       element:<Protected authentication={true}><ResumeTemplates/></Protected>
+    },
+    {
+      path:'/ats',
+      element:<Protected authentication={true}><ATSChecker/></Protected>
     }
   ]
   },
