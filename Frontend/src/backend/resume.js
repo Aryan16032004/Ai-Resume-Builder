@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { toast } from 'sonner';
 
 export class ResumeService {
   async saveResumeData({ resumeId,resumeData }) {
@@ -16,7 +17,7 @@ export class ResumeService {
       return response
     } catch (error) {
       console.error('Error saving resume:', error);
-      alert('Something went wrong while saving the resume.');
+      toast.error('Something went wrong while saving the resume.');
     }
   }
   
@@ -32,7 +33,7 @@ export class ResumeService {
       return response.data.data;
     } catch (error) {
       console.error('Error fetching resume:', error);
-      alert('Something went wrong while fetching the resume.');
+      toast.error('Something went wrong while fetching the resume.');
     }
   }
 
@@ -51,7 +52,7 @@ export class ResumeService {
       return response.data.data;
     } catch (error) {
       console.error('Error creating resume:', error);
-      alert('Something went wrong while creating the resume.');
+      toast.error('Something went wrong while creating the resume.');
     }
   }
 
@@ -62,6 +63,7 @@ export class ResumeService {
         });
         return response.data.data;
       } catch (error) {
+        toast.error('Something went wrong while fetching resumes.');
         console.error('Error fetching resumes:', error);
       }
   }
@@ -78,7 +80,21 @@ export class ResumeService {
       return response.data;
     } catch (error) {
       console.error('Error deleting resume:', error);
-      alert('Something went wrong while deleting the resume.');
+      toast.error('Something went wrong while deleting the resume.');
+    }
+  }
+
+  async checkAtsScore(data){
+    try {
+      const response = await axios.post('http://localhost:8000/api/resume/ats/check', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      toast.error('Something went wrong while checking ATS score.');
+      console.error('Error checking ATS score:', error);
     }
   }
 }

@@ -210,19 +210,21 @@ export const checkResume = async (req, res) => {
         }
 
         // Verify file exists before processing
-        try {
-            await fs.access(file.path);
-        } catch (err) {
-            console.error('File access error:', err);
-            return res.status(500).json({ error: 'Uploaded file could not be accessed' });
-        }
+        // try {
+        //     await fs.access(file.path);
+        // } catch (err) {
+        //     console.error('File access error:', err);
+        //     return res.status(500).json({ error: 'Uploaded file could not be accessed' });
+        // }
 
         let resumeText = '';
         try {
             if (file.mimetype === 'application/pdf') {
-                resumeText = await extractTextFromPDF(file.path);
+                // resumeText = await extractTextFromPDF(file.path);
+                resumeText = await extractTextFromPDF(file.buffer);
             } else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-                resumeText = await extractTextFromDocx(file.path);
+                // resumeText = await extractTextFromDocx(file.path);
+                resumeText = await extractTextFromDocx(file.buffer);
             }
         } catch (extractError) {
             console.error('Text extraction failed:', extractError);

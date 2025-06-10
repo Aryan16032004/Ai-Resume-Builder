@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import axios from 'axios';
-import { toast } from 'sonner';
+import { toast,Toaster } from 'sonner';
+import resumeService from '../../backend/resume';
 
 const ATSChecker = () => {
   const [jobTitle, setJobTitle] = useState('');
@@ -39,14 +40,10 @@ const ATSChecker = () => {
       if (jobTitle) formData.append('jobTitle', jobTitle);
       if (jobDescription) formData.append('jobDescription', jobDescription);
 
-      const response = await axios.post('http://localhost:8000/api/resume/ats/check', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      console.log('Resume analysis response:', response.data);
+      const response =await resumeService.checkAtsScore(formData);
+
       
-      setResults(response.data);
+      setResults(response);
 
     } catch (error) {
       console.error('Error checking resume:', error);
@@ -63,6 +60,7 @@ const ATSChecker = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
+      <Toaster expand richColors />
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-extrabold text-gray-900 mb-3">

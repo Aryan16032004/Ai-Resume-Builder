@@ -10,7 +10,7 @@ export async function getGeminiCompletion(prompt) {
     }
   );
   const data = await response.json();
-  console.log('Gemini API response:', data);
+  // console.log('Gemini API response:', data);
   
   return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }

@@ -3,12 +3,12 @@ import mammoth from 'mammoth';
 import fs from 'fs/promises';
 import path from 'path';
 
-export async function extractTextFromPDF(filePath) {
+export async function extractTextFromPDF(buffer) {
     try {
-        const absolutePath = path.resolve(filePath);
-        await fs.access(absolutePath); // Verify file exists
-        const dataBuffer = await fs.readFile(absolutePath);
-        const data = await pdf(dataBuffer);
+        // const absolutePath = path.resolve(filePath);
+        // await fs.access(absolutePath); // Verify file exists
+        // const dataBuffer = await fs.readFile(absolutePath);
+        const data = await pdf(buffer);
         return data.text;
     } catch (error) {
         console.error('PDF extraction failed:', error);
@@ -16,11 +16,11 @@ export async function extractTextFromPDF(filePath) {
     }
 }
 
-export async function extractTextFromDocx(filePath) {
+export async function extractTextFromDocx(buffer) {
     try {
-        const absolutePath = path.resolve(filePath);
-        await fs.access(absolutePath); // Verify file exists
-        const result = await mammoth.extractRawText({ path: absolutePath });
+        // const absolutePath = path.resolve(filePath);
+        // await fs.access(absolutePath); // Verify file exists
+        const result = await mammoth.extractRawText({ buffer });
         return result.value;
     } catch (error) {
         console.error('DOCX extraction failed:', error);
