@@ -1,7 +1,6 @@
 import pdf from 'pdf-parse/lib/pdf-parse.js';
 import mammoth from 'mammoth';
-import fs from 'fs/promises';
-import path from 'path';
+
 
 export async function extractTextFromPDF(buffer) {
     try {

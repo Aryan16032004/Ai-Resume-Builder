@@ -5,6 +5,9 @@ import { uploadOnCloudinary } from "../Cloudinary.js";
 import { extractTextFromDocx, extractTextFromPDF } from "../extractResumeText.js";
 import { getGeminiCompletion } from "../geminiApi.js";
 import fs from 'fs/promises';
+import { parseResumeWithGemini } from "../resumeParser.js";
+import executeCode from "../judge0.js";
+
 
 export const saveResumeData = async (req, res) => {
   try {
@@ -338,4 +341,309 @@ function extractImprovements(text) {
             return cleanLine;
         })
         .filter(line => line.length > 0); // Remove any empty lines
+}
+
+
+export const AnalyzeResume = async (req, res) => {
+    try {
+    // console.log("Received request to analyze resume:", req.body);
+    // console.log("File details:", req.file);
+
+    if (!req.file) throw new Error('No file uploaded');
+    let resumeText;
+    // Detect file type
+    if (req.file.mimetype === 'application/pdf') {
+      resumeText = await extractTextFromPDF(req.file.buffer);
+    } else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      resumeText = await extractTextFromDocx(req.file.buffer);
+    } else {
+      throw new Error('Unsupported file type');
+    }
+    // console.log("Extracted resume text:", resumeText);
+
+    const parsedData = await parseResumeWithGemini(resumeText);
+    // console.log("Parsed resume data:", parsedData);
+
+    const result = {
+      ...parsedData,
+      jobProfile: req.body.jobProfile,
+      salaryRange: req.body.salary,
+      difficulty: getDifficultyLevel(parseInt(req.body.salary))
+    };
+    // console.log("Final result to send:", result);
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+function getDifficultyLevel(salary) {
+  if (salary < 8) return 'Beginner';
+  if (salary <= 16) return 'Intermediate';
+  return 'Advanced';
+}
+
+
+export const generateDsaQuestions = async (req, res) => {
+  try {
+    const { difficulty } = req.body;
+     const prompt = `
+        Generate 4 Data Structures and Algorithms questions for a ${difficulty} level candidate.
+        For each question provide:
+        - title
+        - description
+        - examples (array of {input, output, explanation})
+        - constraints
+        - timeLimit (in minutes, based on difficulty)
+        
+        Format the response as JSON with this structure:
+        {
+          "questions": [
+            {
+              "title": "Question title",
+              "description": "Detailed problem statement",
+              "examples": [...],
+              "constraints": [...],
+              "timeLimit": 15
+            },
+            ...
+          ]
+        }
+        
+        Difficulty guidelines:
+        - Beginner: arrays, strings, sorting, binary search, queues, two pointers, stacks
+        - Intermediate: adds DP, trees, greedy, linked lists
+        - Advanced: adds graphs
+      `;
+  
+      const result = await getGeminiCompletion(prompt);
+      console.log("Generated DSA questions:", result);
+      
+      const jsonStart = result.indexOf('{');
+      const jsonEnd = result.lastIndexOf('}') + 1;
+      const jsonString = result.slice(jsonStart, jsonEnd);
+
+      res.json(JSON.parse(jsonString));
+      
+      
+  } catch (error) {
+    console.error('Error generating DSA questions:', error);
+    res.status(500).json({ error: 'Failed to generate DSA questions' });
+    
+  }
+}
+
+export const evaluateDsaCode = async (req, res) => {
+  try {
+     const { question, code, language } = req.body;
+
+      const executionResults = await executeCode({
+      code,
+      language,
+      testCases: question.testCases
+    });
+    
+    const prompt = `
+      Evaluate this coding solution based on:
+      - Correctness (${executionResults.passedTests}/${executionResults.totalTests} test cases passed)
+      - Time complexity
+      - Space complexity
+      - Code quality
+      - Alternative approaches
+      
+      Provide detailed feedback and a score out of 25.
+      Format as JSON:
+      {
+        "score": number,
+        "correctness": string,
+        "complexity": string,
+        "quality": string,
+        "alternatives": string
+      }
+      
+      Question:
+      ${JSON.stringify(question)}
+      
+      Code:
+      ${code}
+      
+      Test Results:
+      ${JSON.stringify(executionResults)}
+    `;
+
+
+    const result = await getGeminiCompletion(prompt);
+    const jsonStart = result.indexOf('{');
+    const jsonEnd = result.lastIndexOf('}') + 1;
+    const jsonString = result.slice(jsonStart, jsonEnd);
+
+    res.json(JSON.parse(jsonString));
+  } catch (error) {
+    console.error('Error evaluating DSA code:', error);
+    res.status(500).json({ error: 'Failed to evaluate DSA code' });
+    
+  }
+}
+
+export const generateTechnicalQuestions = async (req, res) => {
+  try {
+    const { skills, difficulty } = req.body;
+    const questionCount = difficulty === 'Beginner' ? 4 : difficulty === 'Intermediate' ? 6 : 8;
+     const prompt = `
+      Generate ${questionCount} technical interview questions focusing on these skills: ${skills.join(', ')}.
+      The difficulty level should be ${difficulty}.
+      
+      Include a mix of:
+      - Conceptual questions (theory, definitions)
+      - Practical scenarios (how would you solve X problem)
+      - Problem-solving questions
+      
+      For each question specify:
+      - question (the actual question text)
+      - type (conceptual/practical/problem-solving)
+      - context (additional context if needed)
+      
+      Format as JSON:
+      {
+        "questions": [
+          {
+            "question": "string",
+            "type": "string",
+            "context": "string"
+          },
+          ...
+        ]
+      }
+    `;
+
+    const result = await getGeminiCompletion(prompt);
+    const jsonStart = result.indexOf('{');
+    const jsonEnd = result.lastIndexOf('}') + 1;
+    const jsonString = result.slice(jsonStart, jsonEnd);
+    res.json(JSON.parse(jsonString));
+  } catch (error) {
+    console.error('Error generating technical questions:', error);
+    res.status(500).json({ error: 'Failed to generate technical questions' });
+    
+  }
+}
+
+export const evaluateTechnicalAnswer = async (req, res) => {
+  try {
+    const { question, answer } = req.body;
+     const prompt = `
+      Evaluate this technical interview answer against the question.
+      Provide detailed feedback including:
+      - accuracy (is the answer technically correct?)
+      - depth (does it show deep understanding?)
+      - communication (is it clearly articulated?)
+      - suggestions for improvement
+      
+      Format the response as JSON:
+      {
+        "accuracy": "string",
+        "depth": "string",
+        "communication": "string",
+        "suggestions": "string"
+      }
+      
+      Question:
+      ${JSON.stringify(question)}
+      
+      Answer:
+      ${answer}
+    `;
+
+    const result = await getGeminiCompletion(prompt);
+    const jsonStart = result.indexOf('{');
+    const jsonEnd = result.lastIndexOf('}') + 1;
+    const jsonString = result.slice(jsonStart, jsonEnd);
+    res.json(JSON.parse(jsonString));
+  } catch (error) {
+    console.error('Error evaluating technical answer:', error);
+    res.status(500).json({ error: 'Failed to evaluate technical answer' });
+    
+  }
+}
+
+export const generateProjectQuestions = async (req, res) => {
+  try {
+    const { project } = req.body;
+     const prompt = `
+      Generate 4-10 technical interview questions about this project for a candidate to explain.
+      The questions should cover:
+      - Overall project explanation
+      - Tech stack choices
+      - Challenges faced
+      - Architecture decisions
+      - Impact/outcomes
+      - Follow-up technical questions
+      
+      For each question include:
+      - question (the actual question text)
+      - context (why this question is important)
+      
+      Format as JSON:
+      {
+        "questions": [
+          {
+            "question": "string",
+            "context": "string"
+          },
+          ...
+        ]
+      }
+      
+      Project details:
+      ${JSON.stringify(project)}
+    `;
+    const result = await getGeminiCompletion(prompt);
+    const jsonStart = result.indexOf('{');
+    const jsonEnd = result.lastIndexOf('}') + 1;
+    const jsonString = result.slice(jsonStart, jsonEnd);
+    res.json(JSON.parse(jsonString));
+  } catch (error) {
+    console.error('Error generating project questions:', error);
+    res.status(500).json({ error: 'Failed to generate project questions' });
+    
+  }
+}
+
+
+export const evaluateProjectAnswer = async (req, res) => {
+  try {
+    const { question, answer } = req.body;
+    const prompt = `
+      Evaluate this project interview answer against the question.
+      Provide detailed feedback including:
+      - understanding (does it show good understanding of the project?)
+      - technicalDepth (does it demonstrate technical expertise?)
+      - communication (is it clearly articulated?)
+      - suggestions for improvement
+      
+      Format the response as JSON:
+      {
+        "understanding": "string",
+        "technicalDepth": "string",
+        "communication": "string",
+        "suggestions": "string"
+      }
+      
+      Question:
+      ${JSON.stringify(question)}
+      
+      Answer:
+      ${answer}
+    `;
+
+    const result = await getGeminiCompletion(prompt);
+    const jsonStart = result.indexOf('{');  
+    const jsonEnd = result.lastIndexOf('}') + 1;
+    const jsonString = result.slice(jsonStart, jsonEnd);
+    res.json(JSON.parse(jsonString));
+  } catch (error) {
+    console.error('Error evaluating project answer:', error);
+    res.status(500).json({ error: 'Failed to evaluate project answer' });
+  }
 }

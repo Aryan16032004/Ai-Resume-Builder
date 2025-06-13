@@ -13,6 +13,7 @@ import Dashboard from './components/Dashboard/Dashboard.jsx'
 import Protected from './components/AuthLayout.jsx'
 import ResumeTemplates from './components/ResumeForm/Template/ResumeTemplates.jsx'
 import ATSChecker from './components/ATSChecker/ATSChecker.jsx'
+import AiInterview from './components/AiInterviewr/AiInterview.jsx'
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,9 @@ const router = createBrowserRouter([
     {
       path:'/ats',
       element:<Protected authentication={true}><ATSChecker/></Protected>
+    },{
+      path:'/ai-interview',
+      element:<Protected authentication={true}><AiInterview/></Protected>
     }
   ]
   },

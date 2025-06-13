@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { verifyJWT } from "../Middleware/auth.js";
-import { checkResume, createResume, deleteResume, generateResumePdf, getAllResumes, getResumesId, saveResumeData } from "../Controllers/resume.controller.js";
+import { AnalyzeResume, checkResume, createResume, deleteResume, evaluateDsaCode, evaluateProjectAnswer, evaluateTechnicalAnswer, generateDsaQuestions, generateProjectQuestions, generateResumePdf, generateTechnicalQuestions, getAllResumes, getResumesId, saveResumeData } from "../Controllers/resume.controller.js";
 import { upload } from "../Middleware/multer.js";
 
 const router = Router()
@@ -12,6 +12,13 @@ router.route("/").get(verifyJWT,getAllResumes)
 router.route("/:id").delete(verifyJWT,deleteResume)
 router.route("/generate").post(generateResumePdf)
 router.route("/ats/check").post(upload.single('resume'),checkResume);
+router.route("/parse-resume").post(upload.single('resume'),AnalyzeResume);
+router.route("/generate-dsa-questions").post(generateDsaQuestions)
+router.route("/evaluate-dsa").post(evaluateDsaCode)
+router.route("/generate-technical-questions").post(generateTechnicalQuestions);
+router.route("/evaluate-technical-answer").post(evaluateTechnicalAnswer);
+router.route("/generate-project-questions").post(generateProjectQuestions);
+router.route("/evaluate-project-answer").post(evaluateProjectAnswer);
 
 
 export default router
