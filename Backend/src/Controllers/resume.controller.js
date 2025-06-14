@@ -7,6 +7,7 @@ import { getGeminiCompletion } from "../geminiApi.js";
 import fs from 'fs/promises';
 import { parseResumeWithGemini } from "../resumeParser.js";
 import executeCode from "../judge0.js";
+import { UserProfile } from "../Models/UserProfile.js";
 
 
 export const saveResumeData = async (req, res) => {
@@ -364,15 +365,16 @@ export const AnalyzeResume = async (req, res) => {
     const parsedData = await parseResumeWithGemini(resumeText);
     // console.log("Parsed resume data:", parsedData);
 
-    const result = {
+  const userProfile = new UserProfile({
       ...parsedData,
       jobProfile: req.body.jobProfile,
-      salaryRange: req.body.salary,
-      difficulty: getDifficultyLevel(parseInt(req.body.salary))
-    };
-    // console.log("Final result to send:", result);
+      salary: req.body.salary,
+      difficulty: getDifficultyLevel(parseInt(req.body.salary)),
+      resumeText,
+    });
 
-    res.json(result);
+    await userProfile.save();
+    res.json(userProfile);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -384,16 +386,62 @@ function getDifficultyLevel(salary) {
   return 'Advanced';
 }
 
+export const getAllProfiles = async (req, res) => {
+   try {
+    const profiles = await UserProfile.find({});
+    res.status(200).json(profiles);
+  } catch (error) {
+    console.error("Error in getAllProfiles:", error);
+    res.status(500).json({ 
+      error: "Internal server error",
+    });
+  }
+}
+
+export const getAllProfilesId = async (req, res) => {
+    try {
+    const profile = await UserProfile.findById(req.params.id);
+    console.log("Fetching profile with ID:", req.params.id);
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+    res.json(profile);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+export const deleteProfile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const profile = await UserProfile.findById(id);
+    if (!profile) {
+      return res.status(404).json({ error: 'Profile not found' });
+    }
+
+    await UserProfile.findByIdAndDelete(id);
+    
+    res.status(200).json({ message: 'Profile deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting profile:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete profile',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 
 export const generateDsaQuestions = async (req, res) => {
   try {
     const { difficulty } = req.body;
-     const prompt = `
+    const prompt = `
         Generate 4 Data Structures and Algorithms questions for a ${difficulty} level candidate.
         For each question provide:
         - title
         - description
-        - examples (array of {input, output, explanation})
+        - testCases (array of {input, output, explanation})
         - constraints
         - timeLimit (in minutes, based on difficulty)
         
@@ -403,18 +451,19 @@ export const generateDsaQuestions = async (req, res) => {
             {
               "title": "Question title",
               "description": "Detailed problem statement",
-              "examples": [...],
+              "testCases": [
+                {
+                  "input": "sample input",
+                  "output": "expected output",
+                  "explanation": "optional explanation"
+                }
+              ],
               "constraints": [...],
               "timeLimit": 15
             },
             ...
           ]
         }
-        
-        Difficulty guidelines:
-        - Beginner: arrays, strings, sorting, binary search, queues, two pointers, stacks
-        - Intermediate: adds DP, trees, greedy, linked lists
-        - Advanced: adds graphs
       `;
   
       const result = await getGeminiCompletion(prompt);
@@ -436,14 +485,52 @@ export const generateDsaQuestions = async (req, res) => {
 
 export const evaluateDsaCode = async (req, res) => {
   try {
-     const { question, code, language } = req.body;
+    const { question, code, language } = req.body;
 
-      const executionResults = await executeCode({
+    // Ensure testCases exists and is an array
+    const testCases = question.testCases || [];
+    
+    const executionResults = await executeCode({
       code,
       language,
-      testCases: question.testCases
+      testCases
     });
-    
+
+    // If no test cases, still evaluate based on code quality
+    if (testCases.length === 0) {
+      const prompt = `
+        Evaluate this coding solution based on:
+        - Code quality
+        - Time complexity analysis
+        - Space complexity analysis
+        - Alternative approaches
+        
+        Provide detailed feedback and a score out of 25.
+        Format as JSON:
+        {
+          "score": number,
+          "correctness": "string",
+          "complexity": "string",
+          "quality": "string",
+          "alternatives": "string"
+        }
+        
+        Question:
+        ${JSON.stringify(question)}
+        
+        Code:
+        ${code}
+      `;
+
+      const result = await getGeminiCompletion(prompt);
+      const jsonStart = result.indexOf('{');
+      const jsonEnd = result.lastIndexOf('}') + 1;
+      const jsonString = result.slice(jsonStart, jsonEnd);
+
+      return res.json(JSON.parse(jsonString));
+    }
+
+    // Normal evaluation with test cases
     const prompt = `
       Evaluate this coding solution based on:
       - Correctness (${executionResults.passedTests}/${executionResults.totalTests} test cases passed)
@@ -472,7 +559,6 @@ export const evaluateDsaCode = async (req, res) => {
       ${JSON.stringify(executionResults)}
     `;
 
-
     const result = await getGeminiCompletion(prompt);
     const jsonStart = result.indexOf('{');
     const jsonEnd = result.lastIndexOf('}') + 1;
@@ -481,8 +567,10 @@ export const evaluateDsaCode = async (req, res) => {
     res.json(JSON.parse(jsonString));
   } catch (error) {
     console.error('Error evaluating DSA code:', error);
-    res.status(500).json({ error: 'Failed to evaluate DSA code' });
-    
+    res.status(500).json({ 
+      error: 'Failed to evaluate DSA code',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
 

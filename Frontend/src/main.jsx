@@ -13,7 +13,9 @@ import Dashboard from './components/Dashboard/Dashboard.jsx'
 import Protected from './components/AuthLayout.jsx'
 import ResumeTemplates from './components/ResumeForm/Template/ResumeTemplates.jsx'
 import ATSChecker from './components/ATSChecker/ATSChecker.jsx'
-import AiInterview from './components/AiInterviewr/AiInterview.jsx'
+import AiInterview from './components/AiInterview/AiInterview.jsx'
+import ProfileView from './components/AiInterview/ProfileView.jsx'
+import InterviewPractice from './components/AiInterview/InterviewPractice.jsx'
 
 const router = createBrowserRouter([
   {
@@ -42,6 +44,13 @@ const router = createBrowserRouter([
     },{
       path:'/ai-interview',
       element:<Protected authentication={true}><AiInterview/></Protected>
+    },
+    {
+      path: '/profile/:id',
+      element: <Protected authentication={true}><ProfileView/></Protected>
+    },{
+      path:'/interview-practice/:id',
+      element:<Protected authentication={true}><InterviewPractice/></Protected>
     }
   ]
   },

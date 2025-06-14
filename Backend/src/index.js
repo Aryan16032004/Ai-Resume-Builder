@@ -5,6 +5,7 @@ import dotenv from "dotenv"
 import connnectDB from "./db/index.js";
 import userRouter from "./Routes/user.route.js"
 import resumeRouter from "./Routes/resume.route.js"
+import interviewRouter from "./Routes/interview.route.js"
 import fs from 'fs';
 import path from 'path';
 
@@ -29,6 +30,7 @@ if (!fs.existsSync(uploadDir)) {
 
 app.use("/api/users", userRouter)
 app.use("/api/resume", resumeRouter)
+app.use("/api/interview", interviewRouter)
 
 dotenv.config(
     {path:'.env'}

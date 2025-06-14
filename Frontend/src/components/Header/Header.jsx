@@ -24,6 +24,9 @@ function Header() {
                 <Button asChild variant="link"> 
                   <Link to="/templates">Resume Templates</Link>
                 </Button>
+                <Button asChild variant="link"> 
+                  <Link to="/ai-interview">Ai Interview</Link>
+                </Button>
               </div>
               <div >
                 <LogoutBtn/>
