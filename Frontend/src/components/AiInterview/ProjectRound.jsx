@@ -81,25 +81,21 @@ const startRecording = () => {
   recognitionRef.current.interimResults = true;
   recognitionRef.current.lang = 'en-US';
 
-  let finalTranscript = answer; // Start with existing answer
+  let finalTranscript = answer;
 
   recognitionRef.current.onresult = (event) => {
     let interimTranscript = '';
     
-    // Process all results
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const transcript = event.results[i][0].transcript;
       
       if (event.results[i].isFinal) {
-        // For final results, add to the final transcript
         finalTranscript += (finalTranscript ? ' ' : '') + transcript;
       } else {
-        // For interim results, show them temporarily
         interimTranscript += transcript;
       }
     }
     
-    // Update the textarea with both final and interim results
     setAnswer(finalTranscript + (interimTranscript ? ' ' + interimTranscript : ''));
   };
 
@@ -148,7 +144,6 @@ const startRecording = () => {
     }
   };
 
-  // Cleanup effect
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {

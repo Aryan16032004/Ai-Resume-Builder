@@ -182,23 +182,34 @@ export const deleteResume = async (req, res) => {
 export const generateResumePdf = async (req, res) => {
   try {
     const { html } = req.body;
-    // console.log("Generating PDF with HTML content:", html);
-    
-    
+    console.log("Received request to generate PDF.");
+    // console.log("Request body:", req.body);
+
     if (!html) {
+      console.error("No HTML provided in request body.");
       return res.status(400).json({ error: 'HTML content is required' });
     }
-    
-    const pdf = await generatePdf(html, null); // Pass null to get buffer instead of file
-    
+
+    console.log("HTML content length:", html.length);
+
+    let pdf;
+    try {
+      pdf = await generatePdf(html, null); // Pass null to get buffer instead of file
+      console.log("PDF generated successfully. Buffer size:", pdf.length);
+    } catch (pdfErr) {
+      console.error("Error in generatePdf():", pdfErr);
+      return res.status(500).json({ error: 'Failed to generate PDF in generatePdf' });
+    }
+
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': 'attachment; filename=resume.pdf'
     });
-    
+
     res.send(pdf);
+    console.log("PDF sent to client.");
   } catch (error) {
-    console.error('PDF generation error:', error);
+    console.error('PDF generation error (outer catch):', error);
     res.status(500).json({ error: 'Failed to generate PDF' });
   }
 }

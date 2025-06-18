@@ -1,0 +1,53 @@
+version: '3.8'
+
+name: ai_resume_builder
+
+services:
+  mongo:
+    image: mongo:7.0.12
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db  # Fixed: Added space after -
+    networks:
+      - ai_resume_builder
+
+  api:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./Backend:/app  # Fixed: Added space after -
+      - /app/node_modules
+    ports:
+      - "8000:8000"
+    networks:
+      - ai_resume_builder
+    env_file: ./Backend/.env
+    depends_on:
+      - mongo
+  
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./Frontend:/app  # Fixed: Added space after -
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    networks:
+      - ai_resume_builder
+    env_file: ./Frontend/.env
+    command: npm run dev -- --host
+    depends_on:
+      - api
+
+volumes:
+  mongo_data:
+
+networks:
+  ai_resume_builder:
+    driver: bridge

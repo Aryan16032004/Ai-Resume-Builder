@@ -8,7 +8,7 @@ import ProjectsForm from './ProjectsForm';
 import EducationForm from './EducationForm';
 import CertificationsForm from './CertificationsForm';
 import AchievementsForm from './AchievementsForm';
-import DownloadDropdown from '../DownloadDropDown';
+import DownloadDropdown from '../DownloadDropdown';
 import resumeService from '../../backend/resume';
 import TemplateLoader from './TemplateLoader';
 import TrainingForm from './TrainingForm';
@@ -106,6 +106,8 @@ function Resume() {
   };
 
 const handleDownload = async (type) => {
+  console.log(`Download type selected: ${type}`);
+  
   if (type === 'print') {
     const element = document.getElementById('resume-preview');
     element.classList.add('print-mode');
@@ -213,6 +215,7 @@ const handleDownload = async (type) => {
         </html>
       `;
 
+      
       const response = await axios.post('http://localhost:8000/api/resume/generate', 
         { html }, 
         {
