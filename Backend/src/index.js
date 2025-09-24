@@ -14,8 +14,8 @@ import path from 'path';
 const app = express();
 
 app.use(cors({
-  origin: "http://localhost:5173", 
-  credentials: true,              
+  origin: process.env.CORS_ORIGIN,
+  credentials: true,
 }));
 
 app.use(express.json({ limit: '5mb' })); // or even higher if needed
