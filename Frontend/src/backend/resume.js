@@ -1,5 +1,9 @@
-import axios from 'axios'
+
+import axios from 'axios';
 import { toast } from 'sonner';
+
+// Use Vite environment variable for API base URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export class ResumeService {
   async saveResumeData({ resumeId,resumeData }) {
@@ -7,8 +11,8 @@ export class ResumeService {
       console.log('Saving resume data:', { resumeId, resumeData })
       
       const response = await axios.post(
-        'http://localhost:8000/api/resume/save',
-        {resumeId,resumeData,},
+        `${API_BASE_URL}/api/resume/save`,
+        { resumeId, resumeData },
         {
           withCredentials: true
         }
@@ -24,7 +28,7 @@ export class ResumeService {
   async getResumeData(resumeId) {
     try {
       const response = await axios.get(
-        `http://localhost:8000/api/resume/${resumeId}`,
+        `${API_BASE_URL}/api/resume/${resumeId}`,
         {
           withCredentials: true
         }
@@ -42,7 +46,7 @@ export class ResumeService {
 
       
       const response = await axios.post(
-        'http://localhost:8000/api/resume/create',
+        `${API_BASE_URL}/api/resume/create`,
         { name, templateName },
         {
           withCredentials: true
@@ -58,7 +62,7 @@ export class ResumeService {
 
   async getAllResumes(){
      try {
-        const response = await axios.get('http://localhost:8000/api/resume/', {
+        const response = await axios.get(`${API_BASE_URL}/api/resume/`, {
           withCredentials: true
         });
         return response.data.data;
@@ -71,7 +75,7 @@ export class ResumeService {
   async deleteResume(resumeId) {
     try {
       const response = await axios.delete(
-        `http://localhost:8000/api/resume/${resumeId}`,
+        `${API_BASE_URL}/api/resume/${resumeId}`,
         {
           withCredentials: true
         }
@@ -86,7 +90,7 @@ export class ResumeService {
 
   async checkAtsScore(data){
     try {
-      const response = await axios.post('http://localhost:8000/api/resume/ats/check', data, {
+      const response = await axios.post(`${API_BASE_URL}/api/resume/ats/check`, data, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

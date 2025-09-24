@@ -13,7 +13,8 @@ export function TechnicalRound({ profileData }) {
     // Generate technical questions based on skills
     useEffect(() => {
         const generateQuestions = async () => {
-            const response = await axios.post('http://localhost:8000/api/resume/generate-technical-questions', {
+            const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+            const response = await axios.post(`${API_BASE_URL}/api/resume/generate-technical-questions`, {
                 skills: profileData.skills,
                 difficulty: profileData.difficulty
             });
@@ -39,7 +40,8 @@ export function TechnicalRound({ profileData }) {
     };
 
     const handleSubmit = async () => {
-        const response = await axios.post('http://localhost:8000/api/resume/evaluate-technical-answer', {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    const response = await axios.post(`${API_BASE_URL}/api/resume/evaluate-technical-answer`, {
             question: questions[currentQuestionIndex],
             answer: userAnswer,
         });

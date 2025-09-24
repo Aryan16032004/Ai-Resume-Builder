@@ -29,7 +29,8 @@ export const ProjectRound = ({ projects, onComplete,onBack}) => {
   const fetchQuestions = async (project) => {
     try {
       setLoading(true);
-      const response = await axios.post('http://localhost:8000/api/interview/generate-project-questions', {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const response = await axios.post(`${API_BASE_URL}/api/interview/generate-project-questions`, {
         project
       });
       setQuestions(response.data.questions);
@@ -46,7 +47,8 @@ export const ProjectRound = ({ projects, onComplete,onBack}) => {
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      const response = await axios.post('http://localhost:8000/api/interview/evaluate-project-answer', {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const response = await axios.post(`${API_BASE_URL}/api/interview/evaluate-project-answer`, {
         question: questions[currentQuestionIndex],
         answer
       });

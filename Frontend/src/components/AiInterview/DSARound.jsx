@@ -44,7 +44,8 @@ export const DSARound = ({ difficulty, onComplete, onBack }) => {
     const fetchQuestions = async () => {
       try {
         setLoading(true);
-        const response = await axios.post('http://localhost:8000/api/interview/generate-dsa-questions', {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const response = await axios.post(`${API_BASE_URL}/api/interview/generate-dsa-questions`, {
           difficulty
         });
         setQuestions(response.data.questions);
@@ -79,7 +80,8 @@ export const DSARound = ({ difficulty, onComplete, onBack }) => {
 const handleSubmit = async () => {
   try {
     setLoading(true);
-    const response = await axios.post('http://localhost:8000/api/interview/evaluate-dsa', {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const response = await axios.post(`${API_BASE_URL}/api/interview/evaluate-dsa`, {
       question: questions[currentQuestionIndex],
       code,
       language

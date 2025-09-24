@@ -17,7 +17,8 @@ export function ProjectRound({ profileData }) {
         const generateQuestions = async () => {
             const questionsForAllProjects = [];
             for (const project of projects) {
-                const response = await axios.post('http://localhost:8000/api/resume/generate-project-questions', { project });
+                const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+                const response = await axios.post(`${API_BASE_URL}/api/resume/generate-project-questions`, { project });
                 questionsForAllProjects.push({
                     project: project.name,
                     questions: response.data.questions
@@ -45,7 +46,8 @@ export function ProjectRound({ profileData }) {
     };
 
     const handleSubmit = async () => {
-        const response = await axios.post('http://localhost:8000/api/resume/evaluate-project-answer', {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    const response = await axios.post(`${API_BASE_URL}/api/resume/evaluate-project-answer`, {
             question: currentQuestion,
             answer: userAnswer,
         });

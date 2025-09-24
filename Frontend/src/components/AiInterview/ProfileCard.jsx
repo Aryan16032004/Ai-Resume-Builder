@@ -51,7 +51,8 @@ export default function ProfileCard({ profile }) {
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
-      await axios.delete(`http://localhost:8000/api/interview/${profile._id}`, {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  await axios.delete(`${API_BASE_URL}/api/interview/${profile._id}`, {
         withCredentials: true
       });
       

@@ -136,7 +136,8 @@ function AiInterview() {
     const fetchProfiles = async () => {
       setLoadingProfiles(true);
       try {
-        const res = await axios.get('http://localhost:8000/api/resume/userProfiles');
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const res = await axios.get(`${API_BASE_URL}/api/resume/userProfiles`);
         setUserProfiles(res.data);
       } catch (e) {
         console.error("Error fetching profiles:", e);
@@ -186,7 +187,8 @@ function AiInterview() {
       formData.append('salary', salaryRange.toString());
       formData.append('jobProfile', jobProfile);
 
-      const response = await axios.post('http://localhost:8000/api/resume/userProfiles', formData, {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const response = await axios.post(`${API_BASE_URL}/api/resume/userProfiles`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 

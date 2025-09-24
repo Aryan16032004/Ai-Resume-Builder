@@ -58,7 +58,8 @@ export default function CreateProfileDialog({ isOpen, onClose, onProfileCreated 
       formData.append('jobProfile', jobProfile);
       formData.append('salary', salary.toString());
 
-      const response = await fetch('http://localhost:8000/api/interview/userProfiles', {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const response = await fetch(`${API_BASE_URL}/api/interview/userProfiles`, {
         method: 'POST',
         body: formData,
       });
