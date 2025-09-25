@@ -27,16 +27,16 @@ function ResumeTemplates() {
     {
       name: 'General Resume',
       description: 'Professional format suitable for most industries',
-      thumbnail: 'src/assets/general-template.jpg',
-      previewComponent: GeneralPreview,
-      previewImage: 'src/assets/general-template.jpg'
+  thumbnail: '/general-template.jpg',
+  previewComponent: GeneralPreview,
+  previewImage: '/general-template.jpg'
     },
     {
       name: 'Specialized Resume',
       description: 'Tailored for specific roles with a modern design',
-      thumbnail: 'src/assets/specialized-template.jpg',
-      previewComponent: SpecializedPreview,
-      previewImage: 'src/assets/specialized-template.jpg'
+  thumbnail: '/specialized-template.jpg',
+  previewComponent: SpecializedPreview,
+  previewImage: '/specialized-template.jpg'
     }
   ];
 

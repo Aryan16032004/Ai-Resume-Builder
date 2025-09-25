@@ -38,7 +38,7 @@ function LandingPage() {
         
         <div className="relative">
           <img 
-            src="src/assets/CV.jpg" 
+            src="/CV.jpg" 
             alt="Resume Example"
             className="relative z-10 rounded-xl shadow-xl w-full max-w-md border-8 border-white transform hover:scale-105 transition-all duration-300"
           />
