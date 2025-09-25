@@ -53,16 +53,18 @@ export const loginUser = async (req, res) => {
     const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
 
     res.cookie("accessToken", accessToken, {
-    httpOnly: true,
-    secure: false,
-    maxAge: 15 * 60 * 1000 // 15 minutes
-  });
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    });
 
     res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    secure: false,
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
-  });
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
 
     return res.status(200).json({
       success: true,
@@ -86,8 +88,8 @@ export const logoutUser = async (req, res) => {
   );
 
   // Clear both cookies
-  res.clearCookie("accessToken");
-  res.clearCookie("refreshToken");
+  res.clearCookie("accessToken", { secure: true, sameSite: 'none' });
+  res.clearCookie("refreshToken", { secure: true, sameSite: 'none' });
 
   return res.json({ success: true });
 };
