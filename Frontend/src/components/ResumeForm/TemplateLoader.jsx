@@ -1,9 +1,10 @@
 import React, { lazy, Suspense } from 'react';
 
 const TemplateLoader = ({ templateName, data, id }) => {
-  if (!templateName) {
-    console.error('Missing templateName:', { templateName, data, id });
-    throw new Error('Template name is required');
+  const validTemplates = ["GeneralPreview", "SpecializedPreview"];
+  if (!templateName || !validTemplates.includes(templateName)) {
+    console.error('Invalid or missing templateName:', { templateName, data, id });
+    return <div style={{color: 'red', padding: '2rem'}}>Error: Invalid resume template selected.</div>;
   }
 
   const TemplateComponent = lazy(() => import(`./Template/${templateName}.jsx`));
